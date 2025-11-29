@@ -27,20 +27,22 @@ interface Pokemon {
     is_hidden: boolean;
     slot: number;
   }[];
-  stats: {
-    base_stat: number;
-    effort: number;
-    stat: {
-      name: string;
-      url: string;
-    };
-  }[];
+  stats: Stat[];
   species: {
     name: string;
     url: string;
   };
   base_experience: number;
   order: number;
+}
+
+export interface Stat {
+  base_stat: number;
+  effort: number;
+  stat: {
+    name: string;
+    url: string;
+  };
 }
 
 export interface Sprite {

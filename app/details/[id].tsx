@@ -1,18 +1,15 @@
 import { PokemonSprites } from "@/components/pokemons/pokemin-sprites";
+import { PokemonStatBar } from "@/components/pokemons/pokemon-stat-bar";
 import { RemoteImage } from "@/components/pokemons/remote-image";
-import { ThemedText } from "@/components/themed-text";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Screen } from "@/components/ui/screen";
+import { Text } from "@/components/ui/text";
 import { usePokeApi } from "@/hooks/use-poke-api";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Dimensions,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  View,
-} from "react-native";
+import { ActivityIndicator, Dimensions, ScrollView, View } from "react-native";
 
 const typeColors: Record<string, string> = {
   normal: "#A8A77A",
@@ -76,18 +73,18 @@ export default function PokemonDetails() {
 
   if (loading) {
     return (
-      <View className="flex-1 items-center justify-center bg-slate-900">
+      <Screen className="justify-center items-center">
         <ActivityIndicator size="large" color="#3b82f6" />
-        <ThemedText className="mt-4">Loading Pokémon...</ThemedText>
-      </View>
+        <Text className="mt-4">Loading Pokémon...</Text>
+      </Screen>
     );
   }
 
   if (!pokemon) {
     return (
-      <View className="flex-1 items-center justify-center bg-slate-900">
-        <ThemedText>Pokemon not found</ThemedText>
-      </View>
+      <Screen className="justify-center items-center">
+        <Text>Pokemon not found</Text>
+      </Screen>
     );
   }
 
@@ -97,35 +94,34 @@ export default function PokemonDetails() {
 
   return (
     <Screen>
-      <Stack.Screen options={{ title: `${pokemon.name} #${pokemon.id}` }} />
-      <ScrollView contentContainerStyle={{ padding: 16 }}>
-        <View
-          className="rounded-xl mb-4"
+      <Stack.Screen
+        options={{
+          title: `${pokemon.name[0].toUpperCase()}${pokemon.name.slice(1)} #${pokemon.id}`,
+        }}
+      />
+      <ScrollView contentContainerStyle={{ padding: 16, gap: 16 }}>
+        <Card
+          className="rounded-xl "
           style={{ backgroundColor: `${bg}32`, padding: 16 }}
         >
           <View className="flex-row items-center justify-between">
             <View>
-              <ThemedText className="text-3xl font-bold text-white capitalize">
+              <Text className="text-3xl font-bold capitalize">
                 {pokemon.name}
-              </ThemedText>
-              <ThemedText className="text-sm text-white/80">
-                ID: {pokemon.id}
-              </ThemedText>
-              <View className="flex-row mt-2">
+              </Text>
+              <Text className="text-sm opacity-80">ID: {pokemon.id}</Text>
+              <View className="flex-row  flex-wrap mt-2 gap-1">
                 {pokemon.types.map((t) => {
                   const typeName = t?.type?.name ?? String(t?.slot ?? "type");
                   return (
-                    <View
+                    <Badge
                       key={typeName}
-                      className="px-3 py-1 rounded-full mr-2 flex-row items-center justify-center"
                       style={{
                         backgroundColor: typeColors[typeName] ?? "#374151",
                       }}
                     >
-                      <ThemedText className="text-white capitalize text-center">
-                        {typeName}
-                      </ThemedText>
-                    </View>
+                      <Text className="capitalize text-center">{typeName}</Text>
+                    </Badge>
                   );
                 })}
               </View>
@@ -140,96 +136,98 @@ export default function PokemonDetails() {
               resizeMode="contain"
             />
           </View>
-        </View>
+        </Card>
 
-        <View className="bg-slate-800 rounded-lg p-4 mb-4">
-          <ThemedText className="text-lg font-semibold mb-2">Stats</ThemedText>
-          {pokemon.stats.map((s) => (
-            <View key={s.stat.name} className="mb-2">
-              <View className="flex-row justify-between">
-                <ThemedText className="capitalize">{s.stat.name}</ThemedText>
-                <ThemedText>{s.base_stat}</ThemedText>
-              </View>
-              <View
-                style={styles.statTrack}
-                className="mt-1 rounded-full bg-slate-700"
-              >
-                <View
-                  style={{ width: `${(s.base_stat / MAX_STAT) * 100}%` }}
-                  className="h-2 rounded-full bg-yellow-400"
-                />
-              </View>
+        <Card>
+          <CardHeader>
+            <CardTitle>Stats</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {pokemon.stats.map((s) => (
+              <PokemonStatBar stat={s} key={s.stat.name} />
+            ))}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>About</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <View className="flex-row justify-between mb-2">
+              <Text>Height</Text>
+              <Text>{(pokemon.height / 10).toFixed(2)} m</Text>
             </View>
-          ))}
-        </View>
-
-        <View className="bg-slate-800 rounded-lg p-4 mb-4">
-          <ThemedText className="text-lg font-semibold mb-2">About</ThemedText>
-          <View className="flex-row justify-between mb-2">
-            <ThemedText>Height</ThemedText>
-            <ThemedText>{(pokemon.height / 10).toFixed(1)} m</ThemedText>
-          </View>
-          <View className="flex-row justify-between mb-2">
-            <ThemedText>Weight</ThemedText>
-            <ThemedText>{(pokemon.weight / 10).toFixed(1)} kg</ThemedText>
-          </View>
-          <View className="flex-row justify-between mb-2">
-            <ThemedText>Base Exp</ThemedText>
-            <ThemedText>{pokemon.base_experience}</ThemedText>
-          </View>
-          <View className="flex-row justify-between">
-            <ThemedText>Moves</ThemedText>
-            <ThemedText>{pokemon.moves?.length ?? 0}</ThemedText>
-          </View>
-          {description ? (
-            <View className="mt-3">
-              <ThemedText className="text-sm text-slate-200">
-                {description}
-              </ThemedText>
+            <View className="flex-row justify-between mb-2">
+              <Text>Weight</Text>
+              <Text>{(pokemon.weight / 10).toFixed(2)} kg</Text>
             </View>
-          ) : null}
-        </View>
+            <View className="flex-row justify-between mb-2">
+              <Text>Base Exp</Text>
+              <Text>{pokemon.base_experience}</Text>
+            </View>
+            <View className="flex-row justify-between">
+              <Text>Moves</Text>
+              <Text>{pokemon.moves?.length ?? 0}</Text>
+            </View>
+            {description ? (
+              <View className="mt-3">
+                <Text className="text-sm text-slate-200">{description}</Text>
+              </View>
+            ) : null}
+          </CardContent>
+        </Card>
 
-        <View className="bg-slate-800 rounded-lg p-4 mb-4">
-          <ThemedText className="text-lg font-semibold mb-2">
-            Abilities
-          </ThemedText>
-          {pokemon.abilities.map((a) => (
-            <ThemedText key={a.ability.name} className="capitalize mb-1">
-              {a.ability.name}
-              {a.is_hidden ? " (hidden)" : ""}
-            </ThemedText>
-          ))}
-        </View>
+        <Card>
+          <CardHeader>
+            <CardTitle>Abilities</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-row flex-wrap gap-2">
+            {pokemon.abilities.map((a) => (
+              <Badge key={a.ability.name} variant={"secondary"}>
+                <Text className="capitalize">
+                  {a.ability.name}
+                  {a.is_hidden ? " (hidden)" : ""}
+                </Text>
+              </Badge>
+            ))}
+          </CardContent>
+        </Card>
 
-        <View className="bg-slate-800 rounded-lg p-4 mb-6">
-          <ThemedText className="text-lg font-semibold mb-2">
-            Sprites
-          </ThemedText>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            className="pt-2"
-          >
-            <PokemonSprites sprites={pokemon.sprites} />
-          </ScrollView>
-        </View>
+        <Card>
+          <CardHeader>
+            <CardTitle>Moves</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <View className="w-full flex-row flex-wrap gap-2">
+              {pokemon.moves.map((a) => (
+                <Badge key={a.move.name} variant={"secondary"}>
+                  <Text className="capitalize text-center">{a.move.name}</Text>
+                </Badge>
+              ))}
+            </View>
+          </CardContent>
+        </Card>
 
-        <Pressable
-          onPress={() => router.back()}
-          className="items-center rounded-lg py-3 bg-slate-700"
-        >
-          <ThemedText className="font-semibold">Go Back</ThemedText>
-        </Pressable>
+        <Card>
+          <CardHeader>
+            <CardTitle>Sprites</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              className="pt-2"
+            >
+              <PokemonSprites sprites={pokemon.sprites} />
+            </ScrollView>
+          </CardContent>
+        </Card>
+
+        <Button onPress={() => router.back()}>
+          <Text className="font-semibold">Go Back</Text>
+        </Button>
       </ScrollView>
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  statTrack: {
-    height: 8,
-    width: "100%",
-    overflow: "hidden",
-  },
-});
