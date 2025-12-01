@@ -2,6 +2,7 @@ import "./global.css";
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { NAV_THEME } from "@/lib/theme";
+import { SWRProvider } from "@/providers/swr-provider";
 import { ThemeProvider } from "@react-navigation/native";
 import { PortalHost } from "@rn-primitives/portal";
 import { Stack } from "expo-router";
@@ -15,24 +16,29 @@ export default function RootLayout() {
   const theme = useMemo(() => NAV_THEME[colorScheme ?? "dark"], [colorScheme]);
 
   return (
-    <ThemeProvider value={theme}>
-      <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-        <Stack
-          screenOptions={{
-            contentStyle: { flex: 1, backgroundColor: theme.colors.background },
-            animation: "default",
-            animationDuration: 800,
-          }}
-        >
-          <Stack.Screen
-            name="index"
-            options={{ headerTitle: "PokeDex Expo + NativeWind" }}
-          />
-          <Stack.Screen name="details/[id]" options={{ title: "" }} />
-        </Stack>
-        <StatusBar style="auto" />
-      </View>
-      <PortalHost />
-    </ThemeProvider>
+    <SWRProvider>
+      <ThemeProvider value={theme}>
+        <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+          <Stack
+            screenOptions={{
+              contentStyle: {
+                flex: 1,
+                backgroundColor: theme.colors.background,
+              },
+              animation: "default",
+              animationDuration: 800,
+            }}
+          >
+            <Stack.Screen
+              name="index"
+              options={{ headerTitle: "PokeDex Expo + NativeWind" }}
+            />
+            <Stack.Screen name="details/[id]" options={{ title: "" }} />
+          </Stack>
+          <StatusBar style="auto" />
+        </View>
+        <PortalHost />
+      </ThemeProvider>
+    </SWRProvider>
   );
 }
