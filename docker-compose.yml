@@ -1,0 +1,21 @@
+version: "3.8"
+
+services:
+  build-android:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: expo-pokedex-builder
+    container_name: pokedex-builder
+    volumes:
+      # Montar solo lo necesario para el output
+      - ./build-output:/app/build-output
+      # Mantener node_modules en volumen para cache
+      - node_modules:/app/node_modules
+    environment:
+      - NODE_ENV=production
+      - EXPO_NO_TELEMETRY=1
+    # El comando viene del CMD del Dockerfile
+
+volumes:
+  node_modules:

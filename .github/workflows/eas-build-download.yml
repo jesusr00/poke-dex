@@ -1,0 +1,92 @@
+name: EAS Build & Download
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    name: Build and Download APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🏗️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: "npm"
+
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: 📚 Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: 🚀 Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: 🔨 Build APK with EAS
+        id: build
+        run: |
+          # Iniciar build y capturar output
+          eas build --platform android --profile production --non-interactive --json > build-output.json
+
+          # Extraer build ID
+          BUILD_ID=$(cat build-output.json | jq -r '.[0].id')
+          echo "build_id=$BUILD_ID" >> $GITHUB_OUTPUT
+          echo "Build ID: $BUILD_ID"
+
+      - name: ⏳ Wait for build completion
+        run: |
+          echo "Esperando a que el build termine..."
+          # Esperar hasta que el build esté completo (máximo 60 minutos)
+          timeout 3600 bash -c 'until eas build:view ${{ steps.build.outputs.build_id }} --json | jq -e ".status == \"FINISHED\"" > /dev/null; do sleep 30; done' || true
+
+      - name: 📥 Download APK
+        run: |
+          # Obtener URL del APK
+          BUILD_URL=$(eas build:view ${{ steps.build.outputs.build_id }} --json | jq -r '.artifacts.buildUrl')
+          echo "Downloading from: $BUILD_URL"
+
+          # Descargar APK
+          mkdir -p artifacts
+          curl -L -o artifacts/app-release.apk "$BUILD_URL"
+
+      - name: 📦 Upload APK to GitHub
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk-production-${{ github.sha }}
+          path: artifacts/*.apk
+          retention-days: 90
+
+      - name: 🏷️ Create Release (on tag)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: artifacts/*.apk
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📊 Build summary
+        if: success()
+        run: |
+          echo "## ✅ Build and Download Complete!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📱 Details:" >> $GITHUB_STEP_SUMMARY
+          echo "- Build ID: ${{ steps.build.outputs.build_id }}" >> $GITHUB_STEP_SUMMARY
+          echo "- APK uploaded as artifact" >> $GITHUB_STEP_SUMMARY
+          echo "- Download from Actions artifacts section" >> $GITHUB_STEP_SUMMARY
